@@ -130,7 +130,9 @@ export async function getSharedChat(id: string) {
   // if (!chat || !chat.sharePath) {
   //   return null
   // }
-  // return chat
+  const data = await fetch(`${AI_CHAT_API_ENDPOINT}/chat/${id}`)
+  const chat = await data.json()
+  return chat
 }
 
 export async function shareChat(id: string) {
@@ -158,4 +160,6 @@ export async function shareChat(id: string) {
   // await kv.hmset(`chat:${chat.id}`, payload)
 
   // return payload
+
+  return getChat(id, session.user.id)
 }
