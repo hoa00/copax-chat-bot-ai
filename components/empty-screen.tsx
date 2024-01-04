@@ -1,21 +1,25 @@
 import { UseChatHelpers } from 'ai/react'
+import { ExternalLink } from './external-link'
+import { Button } from './ui/button'
+import { IconArrowRight } from './ui/icons'
 
-import { Button } from '@/components/ui/button'
-import { ExternalLink } from '@/components/external-link'
-import { IconArrowRight } from '@/components/ui/icons'
+// import { Button } from '@/components/ui/button'
+// import { ExternalLink } from '@/components/external-link'
+// import { IconArrowRight } from '@/components/ui/icons'
 
 const exampleMessages = [
   {
-    heading: 'Explain technical concepts',
-    message: `What is a "serverless function"?`
+    heading: 'Hỏi về món ăn ngon nhất',
+    message: `Món ăn ngon nhất ở VN?`
   },
   {
-    heading: 'Summarize an article',
-    message: 'Summarize the following article for a 2nd grader: \n'
+    heading: 'Lên danh sách địa điểm phải ghé ở Đà Lạt',
+    message:
+      'Danh sách các điểm du lịch phải đến ở Đà Lạt với các tiêu chí sau: \n'
   },
   {
-    heading: 'Draft an email',
-    message: `Draft an email to my boss about the following: \n`
+    heading: 'Thủ tục check-in ở sân bay Singapore',
+    message: `Cần lưu ý ì về giấy tờ check-in ở sân bay Singapore?: \n`
   }
 ]
 
@@ -23,16 +27,11 @@ export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
   return (
     <div className="mx-auto max-w-2xl px-4">
       <div className="rounded-lg border bg-background p-8">
-        <h1 className="mb-2 text-lg font-semibold">Welcome to AI Chatbot!</h1>
-        <p className="mb-2 leading-normal text-muted-foreground">
-          {/* This is an open source AI chatbot app template built with{' '}
-          <ExternalLink href="https://nextjs.org">Next.js</ExternalLink> and{' '}
-          <ExternalLink href="https://vercel.com/storage/kv">
-            Vercel KV
-          </ExternalLink>
-          . */}
+        <h1 className="mb-2 text-lg font-semibold">Welcome to AI assistant!</h1>
+        <p className="mb-2 leading-normal text-muted-foreground  ">
+          AI assistant helps you plan your trip.
         </p>
-        {/* <p className="leading-normal text-muted-foreground">
+        <p className="leading-normal text-muted-foreground">
           You can start a conversation here or try the following examples:
         </p>
         <div className="mt-4 flex flex-col items-start space-y-2">
@@ -47,7 +46,7 @@ export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
               {message.heading}
             </Button>
           ))}
-        </div> */}
+        </div>
       </div>
     </div>
   )

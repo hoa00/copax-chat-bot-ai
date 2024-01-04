@@ -30,8 +30,6 @@ export const {
   providers: [GitHub, configGoogle],
   callbacks: {
     jwt({ token, profile }) {
-      // console.log('jwt > profile -- ', profile)
-
       if (profile) {
         //   if (account?.provider === 'google') {
         //     return (
@@ -50,7 +48,6 @@ export const {
       return session
     },
     authorized({ auth }) {
-      // console.log('authorized > auth -- ', auth)
       return !!auth?.user // this ensures there is a logged in user for -every- request
     }
   },

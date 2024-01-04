@@ -52,7 +52,10 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       },
       onFinish() {
         if (!path.includes('chat')) {
-          router.push(`/chat/${id}`, { shallow: true, scroll: false })
+          router.push(`/type/travel-guide/chat/${id}`, {
+            shallow: true,
+            scroll: false
+          })
           router.refresh()
         }
       }
@@ -83,13 +86,10 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enter your OpenAI Key</DialogTitle>
+            <DialogTitle>Enter your AI Key</DialogTitle>
             <DialogDescription>
-              If you have not obtained your OpenAI API key, you can do so by{' '}
-              <a
-                href="https://platform.openai.com/signup/"
-                className="underline"
-              >
+              If you have not obtained your AI API key, you can do so by{' '}
+              <a href="#" className="underline">
                 signing up
               </a>{' '}
               on the OpenAI website. This is only necessary for preview
@@ -100,7 +100,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
           </DialogHeader>
           <Input
             value={previewTokenInput}
-            placeholder="OpenAI API key"
+            placeholder="AI API key"
             onChange={e => setPreviewTokenInput(e.target.value)}
           />
           <DialogFooter className="items-center">
