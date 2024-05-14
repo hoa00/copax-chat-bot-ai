@@ -1,6 +1,5 @@
 import { auth } from './auth'
 
-import authConfig from '@/auth.config'
 import {
   DEFAULT_LOGIN_REDIRECT,
   apiAuthPrefix,

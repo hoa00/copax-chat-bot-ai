@@ -91,6 +91,7 @@ export const {
       }
       return token
     },
+    //@ts-ignore
     session: ({ session, token }) => {
       if (session?.user) {
         session.user.id = token?.id || token?.sub
