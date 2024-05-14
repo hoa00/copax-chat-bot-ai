@@ -32,13 +32,13 @@ const configCredentials = Credentials({
   // },
   // @ts-ignore
   async authorize(credentials) {
-    if (!credentials || !credentials.email || !credentials.password) {
+    if (!credentials || !credentials.email) {
       return null
     }
     // fake user = true
     return {
-      id: credentials.email,
-      name: credentials.email,
+      id: credentials.id,
+      name: credentials.name,
       email: credentials.email
     }
   }
@@ -78,7 +78,8 @@ export const {
 
       return true
     },
-    jwt({ token, profile }) {
+    jwt({ token, profile, user }) {
+      // NOTE: nếu oAuth 2 sex cos profile
       if (profile) {
         //   if (account?.provider === 'google') {
         //     return (
@@ -91,8 +92,8 @@ export const {
       return token
     },
     session: ({ session, token }) => {
-      if (session?.user && token?.id) {
-        session.user.id = String(token.id)
+      if (session?.user) {
+        session.user.id = token?.id || token?.sub
       }
       return session
     },
@@ -104,5 +105,6 @@ export const {
     // signIn: '/sign-in' // overrides the next-auth default signin page https://authjs.dev/guides/basics/pages
     signIn: '/auth/login',
     error: '/auth/error'
-  }
+  },
+  session: { strategy: 'jwt' }
 })

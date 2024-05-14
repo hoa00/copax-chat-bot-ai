@@ -2,8 +2,9 @@ import { type Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 
 import { auth } from '@/auth'
-import { getChat } from '@/app/actions'
-import { Chat } from '@/components/chat'
+import { getChat } from '@/actions/actions'
+import ChatAssistant from '@/components/chat-assistant'
+// import { Chat } from '@/components/chat'
 
 export interface ChatPageProps {
   params: {
@@ -43,5 +44,5 @@ export default async function ChatPage({ params }: ChatPageProps) {
     notFound()
   }
 
-  return <Chat id={chat.id} initialMessages={chat.messages} />
+  return <ChatAssistant id={chat.id} initialMessages={chat.messages} />
 }

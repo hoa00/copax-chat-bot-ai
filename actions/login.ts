@@ -19,6 +19,8 @@ export const login = async (
   const { email, password, code } = validatedFields.data
 
   try {
+    let startTime = new Date().getTime()
+    console.log('Start call time: ', startTime)
     const data = await fetch(`${AI_CHAT_API_ENDPOINT}/user/login`, {
       method: 'POST',
       headers: {
@@ -33,10 +35,15 @@ export const login = async (
     if (!existingUser?.email) {
       return { error: "Can't login" }
     }
+    // existingUser.id = existingUser._id?.toString()
+
+    console.log('Finish call time: ', new Date().getTime() - startTime)
 
     await signIn('credentials', {
       email,
-      password,
+      // password: 'a',
+      name: existingUser.name,
+      id: existingUser._id,
       redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT
     })
   } catch (error) {

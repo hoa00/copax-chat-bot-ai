@@ -52,7 +52,7 @@ export function PromptForm({
               onClick={e => {
                 e.preventDefault()
                 router.refresh()
-                router.push('/type/travel-guide')
+                router.push('/assistant/travel')
               }}
               className={cn(
                 buttonVariants({ size: 'sm', variant: 'outline' }),

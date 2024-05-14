@@ -4,7 +4,7 @@ import Image from 'next/image'
 
 import { cn } from '@/lib/utils'
 import { auth } from '@/auth'
-import { clearChats } from '@/app/actions'
+import { clearChats } from '@/actions/actions'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sidebar } from '@/components/sidebar'
 import { SidebarList } from '@/components/sidebar-list'

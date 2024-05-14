@@ -1,32 +1,74 @@
 import { experimental_AssistantResponse } from 'ai'
 import OpenAI from 'openai'
-import { MessageContentText } from 'openai/resources/beta/threads/messages/messages'
 
+import { auth } from '@/auth'
+import { getChatsFromOpenAIAssistant } from '@/actions/openai-assitant.actions'
+// import { nanoid } from '@/lib/utils'
+
+const { ASSISTANT_ID, OPENAI_API_KEY } = process.env
 // Create an OpenAI API client (that's edge friendly!)
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
+  apiKey: OPENAI_API_KEY || ''
 })
 
 // IMPORTANT! Set the runtime to edge
 export const runtime = 'edge'
 
-const homeTemperatures = {
-  bedroom: 20,
-  'home office': 21,
-  'living room': 21,
-  kitchen: 22,
-  bathroom: 23
-}
-
 export async function POST(req: Request) {
-  // Parse the request body
-  const input: {
-    threadId: string | null
-    message: string
-  } = await req.json()
+  const {
+    // @ts-ignore
+    user: { id: userId }
+  } = await auth()
+  if (!userId) {
+    return new Response('Unauthorized', {
+      status: 401
+    })
+  }
 
-  // Create a thread if needed
-  const threadId = input.threadId ?? (await openai.beta.threads.create({})).id
+  // Parse the request body
+  const input: any = await req.json()
+
+  const { id } = input
+
+  let threadId = input.threadId
+
+  // b1: kiểm tra xem đã có chat trong DB chưa
+  const chat = await getChatsFromOpenAIAssistant(id, userId)
+  //b2: ?
+
+  if (chat.id) {
+    if (!threadId) threadId = chat.threadId
+  } else {
+    // Create a thread if needed
+    threadId = input.threadId ?? (await openai.beta.threads.create({})).id
+
+    // chỉ lưu và list nếu ko có treadId do làm chat list
+    if (!chat.threadId) {
+      const title = input.message.substring(0, 100)
+      // const id = nanoid()
+      const createdAt = Date.now()
+      const path = `/assistant/travel/chat/${id}`
+
+      // console.log('tạo :', input.threadId, id)
+      const payload = {
+        id,
+        title,
+        userId,
+        createdAt,
+        path,
+        threadId: threadId,
+        botType: 'openai-assistant',
+        type: 'travel',
+        messages: []
+        // messages: [{ content: msg, role: 'user' }, ...messages]
+      }
+      await addChat(payload)
+    } else {
+      console.log('ko tạo đc threadId: ', input.threadId)
+      const a = await openai.beta.threads.retrieve(threadId)
+      console.log('a', a)
+    }
+  }
 
   // Add a message to the thread
   const createdMessage = await openai.beta.threads.messages.create(threadId, {
@@ -36,119 +78,139 @@ export async function POST(req: Request) {
 
   return experimental_AssistantResponse(
     { threadId, messageId: createdMessage.id },
-    async ({ threadId, sendMessage, sendDataMessage }) => {
+    async ({ forwardStream, sendDataMessage }) => {
       // Run the assistant on the thread
-      const run = await openai.beta.threads.runs.create(threadId, {
+      const runStream = openai.beta.threads.runs.createAndStream(threadId, {
         assistant_id:
-          process.env.ASSISTANT_ID ??
+          ASSISTANT_ID ??
           (() => {
             throw new Error('ASSISTANT_ID is not set')
           })()
       })
 
-      async function waitForRun(run: OpenAI.Beta.Threads.Runs.Run) {
-        // Poll for status change
-        while (run.status === 'queued' || run.status === 'in_progress') {
-          // delay for 500ms:
-          await new Promise(resolve => setTimeout(resolve, 500))
-
-          run = await openai.beta.threads.runs.retrieve(threadId!, run.id)
+      runStream.finalRun().then(runStreamRs => {
+        const chargePointsBody = {
+          // action: '+',
+          value: runStreamRs?.usage?.total_tokens,
+          user: userId,
+          chat: chat.id || input.id,
+          metadata: JSON.stringify({
+            threadId,
+            messageId: createdMessage.id,
+            tokensUsage: runStreamRs?.usage,
+            runResult: runStreamRs
+          })
         }
 
-        // Check the run status
-        if (
-          run.status === 'cancelled' ||
-          run.status === 'cancelling' ||
-          run.status === 'failed' ||
-          run.status === 'expired'
-        ) {
-          throw new Error(run.status)
-        }
+        chargePoints(chargePointsBody)
+      })
 
-        if (run.status === 'requires_action') {
-          if (run.required_action?.type === 'submit_tool_outputs') {
-            const tool_outputs =
-              run.required_action.submit_tool_outputs.tool_calls.map(
-                toolCall => {
-                  const parameters = JSON.parse(toolCall.function.arguments)
+      // forward run status would stream message deltas
+      await forwardStream(runStream)
 
-                  switch (toolCall.function.name) {
-                    case 'getRoomTemperature': {
-                      const temperature =
-                        homeTemperatures[
-                          parameters.room as keyof typeof homeTemperatures
-                        ]
+      // const chargePointsBody = {
+      //   // action: '+',
+      //   value: runResult?.usage?.total_tokens,
+      //   user: userId,
+      //   chat: chat.id || input.id,
+      //   metadata: JSON.stringify({
+      //     threadId,
+      //     messageId: createdMessage.id,
+      //     tokensUsage: runResult?.usage,
+      //     runResult
+      //   })
+      // }
 
-                      return {
-                        tool_call_id: toolCall.id,
-                        output: temperature.toString()
-                      }
-                    }
+      // await chargePoints(chargePointsBody)
 
-                    case 'setRoomTemperature': {
-                      const oldTemperature =
-                        homeTemperatures[
-                          parameters.room as keyof typeof homeTemperatures
-                        ]
+      //('point-transaction/charge')
 
-                      homeTemperatures[
-                        parameters.room as keyof typeof homeTemperatures
-                      ] = parameters.temperature
+      // status can be: queued, in_progress, requires_action, cancelling, cancelled, failed, completed, or expired
+      // while (
+      //   runResult?.status === 'requires_action' &&
+      //   runResult.required_action?.type === 'submit_tool_outputs'
+      // ) {
+      //   const tool_outputs =
+      //     runResult.required_action.submit_tool_outputs.tool_calls.map(
+      //       (toolCall: any) => {
+      //         const parameters = JSON.parse(toolCall.function.arguments)
 
-                      sendDataMessage({
-                        role: 'data',
-                        data: {
-                          oldTemperature,
-                          newTemperature: parameters.temperature,
-                          description: `Temperature in ${parameters.room} changed from ${oldTemperature} to ${parameters.temperature}`
-                        }
-                      })
+      //         switch (toolCall.function.name) {
+      //           case 'getRoomTemperature': {
+      //             const temperature =
+      //               homeTemperatures[
+      //                 parameters.room as keyof typeof homeTemperatures
+      //               ]
 
-                      return {
-                        tool_call_id: toolCall.id,
-                        output: `temperature set successfully`
-                      }
-                    }
+      //             return {
+      //               tool_call_id: toolCall.id,
+      //               output: temperature.toString()
+      //             }
+      //           }
 
-                    default:
-                      throw new Error(
-                        `Unknown tool call function: ${toolCall.function.name}`
-                      )
-                  }
-                }
-              )
+      //           case 'setRoomTemperature': {
+      //             const oldTemperature =
+      //               homeTemperatures[
+      //                 parameters.room as keyof typeof homeTemperatures
+      //               ]
 
-            run = await openai.beta.threads.runs.submitToolOutputs(
-              threadId!,
-              run.id,
-              { tool_outputs }
-            )
+      //             homeTemperatures[
+      //               parameters.room as keyof typeof homeTemperatures
+      //             ] = parameters.temperature
 
-            await waitForRun(run)
-          }
-        }
-      }
+      //             sendDataMessage({
+      //               role: 'data',
+      //               data: {
+      //                 oldTemperature,
+      //                 newTemperature: parameters.temperature,
+      //                 description: `Temperature in ${parameters.room} changed from ${oldTemperature} to ${parameters.temperature}`
+      //               }
+      //             })
 
-      await waitForRun(run)
+      //             return {
+      //               tool_call_id: toolCall.id,
+      //               output: `temperature set successfully`
+      //             }
+      //           }
 
-      // Get new thread messages (after our message)
-      const responseMessages = (
-        await openai.beta.threads.messages.list(threadId, {
-          after: createdMessage.id,
-          order: 'asc'
-        })
-      ).data
+      //           default:
+      //             throw new Error(
+      //               `Unknown tool call function: ${toolCall.function.name}`
+      //             )
+      //         }
+      //       }
+      //     )
 
-      // Send the messages
-      for (const message of responseMessages) {
-        sendMessage({
-          id: message.id,
-          role: 'assistant',
-          content: message.content.filter(
-            content => content.type === 'text'
-          ) as Array<MessageContentText>
-        })
-      }
+      //   runResult = await forwardStream(
+      //     openai.beta.threads.runs.submitToolOutputsStream(
+      //       threadId,
+      //       runResult.id,
+      //       { tool_outputs }
+      //     )
+      //   )
+      // }
     }
   )
+}
+
+// HELPER FUNCTIONS
+function addChat(payload: any) {
+  return fetch(process.env.AI_CHAT_API_ENDPOINT + '/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+}
+
+function chargePoints(payload: any) {
+  // console.log('chargePoints > payload: ', payload)
+  return fetch(process.env.AI_CHAT_API_ENDPOINT + '/point-transaction/charge', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
 }

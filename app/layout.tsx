@@ -3,6 +3,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Toaster } from 'react-hot-toast'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { AntdRegistry } from '@ant-design/nextjs-registry'
 
 import '@/app/globals.css'
 import { cn } from '@/lib/utils'
@@ -45,22 +46,26 @@ export default function RootLayout({ children }: RootLayoutProps) {
           GeistMono.variable
         )}
       >
-        <Toaster />
-        <Providers
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="flex flex-col min-h-screen">
-            {/* @ts-ignore */}
-            <Header />
-            <main className="flex flex-col flex-1 bg-muted/50">{children}</main>
-          </div>
-          <TailwindIndicator />
-        </Providers>
-        <Analytics />
-        <SpeedInsights />
+        <AntdRegistry>
+          <Toaster position="top-center" reverseOrder={false} />
+          <Providers
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="flex flex-col min-h-screen">
+              {/* @ts-ignore */}
+              <Header />
+              <main className="flex flex-col flex-1 bg-muted/50">
+                {children}
+              </main>
+            </div>
+            <TailwindIndicator />
+          </Providers>
+          <Analytics />
+          <SpeedInsights />
+        </AntdRegistry>
       </body>
     </html>
   )
