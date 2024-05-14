@@ -1,6 +1,10 @@
 'use client'
 
-import { useChat, type Message } from 'ai/react'
+import {
+  useChat,
+  type Message,
+  experimental_useAssistant as useAssistant
+} from 'ai/react'
 
 import { cn } from '@/lib/utils'
 import { ChatList } from '@/components/chat-list'
@@ -51,6 +55,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         }
       },
       onFinish() {
+        // kiểm tra xem nếu đang là view tạo mới thì chuyển sang view chi tiết
         if (!path.includes('chat')) {
           router.push(`/type/travel-guide/chat/${id}`, {
             shallow: true,

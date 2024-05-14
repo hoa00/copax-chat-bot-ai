@@ -1,5 +1,7 @@
+import { auth } from '@/auth'
 import { clsx, type ClassValue } from 'clsx'
 import { customAlphabet } from 'nanoid'
+import { redirect } from 'next/navigation'
 import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
@@ -40,4 +42,14 @@ export function formatDate(input: string | number | Date): string {
     day: 'numeric',
     year: 'numeric'
   })
+}
+
+// extract user from session
+export async function getUser() {
+  const session = await auth()
+
+  if (!session?.user) {
+    redirect(`/sign-in`)
+  }
+  return session.user
 }

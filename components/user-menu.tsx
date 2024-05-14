@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { type Session } from 'next-auth'
 import { signOut } from 'next-auth/react'
 
@@ -62,6 +63,36 @@ export function UserMenu({ user }: UserMenuProps) {
               Danh sách bot khác
               <IconExternalLink className="w-3 h-3 ml-auto" />
             </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/settings"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-between w-full text-xs"
+            >
+              Tài khoản
+              {/* <IconExternalLink className="w-3 h-3 ml-auto" /> */}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/products"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-between w-full text-xs"
+            >
+              Point Shop
+              {/* <IconExternalLink className="w-3 h-3 ml-auto" /> */}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/system-config"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-between w-full text-xs"
+            >
+              Admin
+              {/* <IconExternalLink className="w-3 h-3 ml-auto" /> */}
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() =>

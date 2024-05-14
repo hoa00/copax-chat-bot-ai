@@ -1,6 +1,7 @@
 import NextAuth, { type DefaultSession } from 'next-auth'
 import GitHub from 'next-auth/providers/github'
 import GoogleProvider from 'next-auth/providers/google'
+import Credentials from 'next-auth/providers/credentials'
 
 declare module 'next-auth' {
   interface Session {
@@ -23,13 +24,62 @@ const configGoogle = GoogleProvider({
   }
 })
 
+const configCredentials = Credentials({
+  // name: 'Credentials',
+  // credentials: {
+  //   username: { label: 'Username', type: 'text', placeholder: 'jsmith' },
+  //   password: { label: 'Password', type: 'password' }
+  // },
+  // @ts-ignore
+  async authorize(credentials) {
+    if (!credentials || !credentials.email) {
+      return null
+    }
+    // fake user = true
+    return {
+      id: credentials.id,
+      name: credentials.name,
+      email: credentials.email
+    }
+  }
+})
+
 export const {
   handlers: { GET, POST },
-  auth
+  auth,
+  signIn,
+  signOut,
+  unstable_update: update
 } = NextAuth({
-  providers: [GitHub, configGoogle],
+  providers: [GitHub, configGoogle, configCredentials],
   callbacks: {
-    jwt({ token, profile }) {
+    async signIn({ user, account }) {
+      // Allow OAuth without email verification
+      if (account?.provider !== 'credentials') return true
+
+      // Đoạn dưới để kiểm tra user verified hay chưa
+      // const existingUser = await getUserById(user.id)
+
+      // // Prevent sign in without email verification
+      // if (!existingUser?.emailVerified) return false
+
+      // if (existingUser.isTwoFactorEnabled) {
+      //   const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(
+      //     existingUser.id
+      //   )
+
+      //   if (!twoFactorConfirmation) return false
+
+      //   // Delete two factor confirmation for next sign in
+      //   await db.twoFactorConfirmation.delete({
+      //     where: { id: twoFactorConfirmation.id }
+      //   })
+      // }
+
+      return true
+    },
+    jwt({ token, profile, user }) {
+      // NOTE: nếu oAuth 2 sex cos profile
       if (profile) {
         //   if (account?.provider === 'google') {
         //     return (
@@ -41,9 +91,10 @@ export const {
       }
       return token
     },
+    //@ts-ignore
     session: ({ session, token }) => {
-      if (session?.user && token?.id) {
-        session.user.id = String(token.id)
+      if (session?.user) {
+        session.user.id = token?.id || token?.sub
       }
       return session
     },
@@ -52,6 +103,9 @@ export const {
     }
   },
   pages: {
-    signIn: '/sign-in' // overrides the next-auth default signin page https://authjs.dev/guides/basics/pages
-  }
+    // signIn: '/sign-in' // overrides the next-auth default signin page https://authjs.dev/guides/basics/pages
+    signIn: '/auth/login',
+    error: '/auth/error'
+  },
+  session: { strategy: 'jwt' }
 })

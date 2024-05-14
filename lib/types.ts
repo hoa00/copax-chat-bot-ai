@@ -1,4 +1,5 @@
 import { type Message } from 'ai'
+const { AI_CHAT_API_ENDPOINT } = process.env
 
 export interface Chat extends Record<string, any> {
   id: string
@@ -16,3 +17,5 @@ export type ServerActionResult<Result> = Promise<
       error: string
     }
 >
+
+export const productEndpointUrl = `${AI_CHAT_API_ENDPOINT}/product`
